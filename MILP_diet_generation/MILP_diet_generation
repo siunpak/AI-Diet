@@ -1,0 +1,245 @@
+println("========패키지 부르기=========")
+using JuMP, Cbc
+using DataFrames
+using Pkg
+using CSV
+
+
+df = CSV.read("C:/Users/unist/Desktop/Service Lab/2023 고신대/식단 생성(업데이트, 0925)/updated_nutrition_db(3~5)_생성_231017.csv", DataFrame)
+df = select!(df, Not(1)) ## Class랑 이름 선택 제외
+#df[!, [2]]
+df[:,:empty]
+#1:length(df[!, 3]) 
+
+num_sample = 4000
+gen_menu_stack = []
+
+df[:, :special_soup_notneeded]
+
+
+fill(1, length(df[:,1]))
+
+
+#일반식
+#1. 밥-밥-밥:300개
+#2. 밥-일품밥-밥:150개
+#3. 밥-일품면-밥:50개
+
+#간편식
+#1.아침간편식-밥-밥:300개
+#2.아침간편식-일품밥-밥:200개
+
+
+ for p in 1:num_sample
+    
+    println(p)
+
+    # Affine Matrix, (선형 변환해주는 행렬) - Transpose 취하기
+    A = [fill(1, length(df[:, 1])) df[:,:Energy] df[:, :Protein] df[:,:Carbohydrate] df[:,:Fat] df[:,:TotalDietaryFiber] df[:,:VitaminA] df[:, :VitaminC] df[:, :Thiamin] df[:, :Riboflavin] df[:, :Calcium] df[:, :Iron] df[:, :Sodium] df[:, :Linoleic] df[:, :alinolenic] df[:, :breakfast1_cal] df[:, :breakfast2_liq] df[:, :breakfast3_sal] df[:, :snack1_mor_fru] df[:, :snack2_mor_milk] df[:, :snack3_noon_cal] df[:, :snack4_noon_liq] df[:, :rice] df[:, :special] df[:, :soup] df[:, :kimchi] df[:, :special_soup_needed] df[:, :special_soup_notneeded] df[:, :vegitable_soup] df[:, :nonvegitable_soup] df[:, :possible_with_special] df[:, :morning_soup_comb1] df[:, :morning_soup_comb2] df[:, :morning_soup_comb3] df[:, :side_dish1] df[:, :side_dish2] df[:, :empty] df[:,:41] df[:,:42] df[:,:43] df[:,:44] df[:,:45] df[:,:46] df[:,:47] df[:,:48] df[:,:49] df[:,:50] df[:,:51] df[:,:52] df[:,:53] df[:,:54] df[:,:55] df[:,:56] df[:,:57] df[:,:58] df[:,:59] df[:,:60] df[:,:61] df[:,:62] df[:,:63] df[:,:64]]'
+
+    # 변수의 lower_bound 제약 리스트 만들기
+
+#    l = [17; 1260; 18.75; 0; 0; 10; 225; 33.75; 0.375; 0.45; 450; 5.25; 0; 5250; 675; 1; 1; 1; 1; 1; 1; 1; 2; 0; 2; 2; 0; 0; 0; 0; 0; 0; 0; 0; 2; 2; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0] # 3~5세_with breakfast ##밥밥
+#    l = [17; 1260; 18.75; 0; 0; 10; 225; 33.75; 0.375; 0.45; 450; 5.25; 0; 5250; 675; 1; 1; 1; 1; 1; 1; 1; 1; 1; 2; 2; 1; 0; 0; 0; 0; 0; 0; 0; 2; 2; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0] # 3~5세_with breakfast ##밥일품
+
+#    l = [17; 1260; 18.75; 0; 0; 10; 225; 33.75; 0.375; 0.45; 450; 5.25; 0; 5250; 675; 0; 0; 0; 1; 1; 1; 1; 3; 0; 3; 2; 0; 0; 0; 0; 0; 0; 0; 0; 2; 2; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0] # 3~5세_without breakfast ##밥3
+    
+    l = [17; 1260; 18.75; 0; 0; 10; 225; 33.75; 0.375; 0.45; 450; 5.25; 0; 5250; 675; 0; 0; 0; 1; 1; 1; 1; 2; 1; 2; 2; 0; 1; 0; 0; 0; 0; 0; 0; 2; 2; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0; 0] # 3~5세_without breakfast ##밥+일품
+    
+    # 변수의 upper_bound 제약 리스트
+
+
+
+#   u = [17; 1540; Inf; Inf; Inf; Inf; 750; 510; Inf; Inf; 2500; 40; 1600; Inf; Inf; 1; 1; 1; 1; 1; 1; 1; 2; 0; 2; 2; 0; 0; 2; 2; 2; 4; 4; 4; 2; 2; 0; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2; 2] # 3~5세_with breakfast ##밥밥
+#    u = [17; 1540; Inf; Inf; Inf; Inf; 750; 510; Inf; Inf; 2500; 40; 1600; Inf; Inf; 1; 1; 1; 1; 1; 1; 1; 1; 1; 2; 2; 1; 0; 2; 2; 2; 4; 4; 4; 2; 2; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1; 1] # 3~5세_with breakfast ##밥일품
+
+#    u = [17; 1540; Inf; Inf; Inf; Inf; 750; 510; Inf; Inf; 2500; 40; 1600; Inf; Inf; 0; 0; 0; 1; 1; 1; 1; 3; 0; 3; 2; 0; 0; 3; 3; 3; 5; 5; 5; 3; 3; 0; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3] # 3~5세_without breakfast ##밥3
+
+    u = [17; 1540; Inf; Inf; Inf; Inf; 750; 510; Inf; Inf; 2500; 40; 1600; Inf; Inf; 0; 0; 0; 1; 1; 1; 1; 2; 1; 2; 2; 0; 1; 3; 3; 3; 5; 5; 5; 3; 3; 1; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3; 3] # 3~5세_without breakfast ##밥+일품밥
+
+    ### [시퀀스길이, 칼로리, 단백질, 탄수화물, 지방, 식이섬유, 비타민A, 비타민C, 비타민B1(티아민), 비타민B2(리보플라민), 칼슘, 철, 나트륨, linoleic acid, 알파-linoleic acid, 아침간편식(열량), 아침간편식(음료), 아침간편식(샐러드), 아침간식1, 아침간식2, 오후간식1, 오후간식2, 밥, 일품, 국, 김치, 일품에국필요, 일품에국필요없음, 채소국, 채소아닌국, 일품과함께할수있는국, 아침국조합1, 아침국조합2, 아침국조합3, 주찬, 부찬, Empty, 밥type]
+
+
+    # 각종 인스턴스 정의
+    m = Model(Cbc.Optimizer)            # 옵티마이저 모델의 인스턴스 정의 (COIN Branch-and-Cut Solver).
+    index_x = 1:length(df[!, 3])        # 변수들의 인덱스 정의
+
+    index_constraints_A = 1:37   #36       # 제약조건들의 인덱스
+
+    # 모델에 적용할 변수 정의 (각 변수의 하한은 0, 상한은 1로 세팅한다.)
+    @variable(m, x[i in index_x], binary = true)
+
+    # all_variables는 정의된 model에 존재하는 모든 변수를 list화하여 var라는 array에 변수화하여 담음.
+    var = all_variables(m)  # 이 var는 m의 solver가 막 바꿔서 넣어보는 임의의 변수들의 리스트를 의미한다. 
+    for i in var
+        JuMP.set_binary(i)  # 각 i 변수가 {0, 1} 집합 내의 값을 갖도록하는 제약 추가. [0, 1]이 아님에 주의하라!
+    end
+
+    # 선형 혹은 비선형 문제를 풀도록 하는 목적함수 세운 후 model에 반영
+    ## 모델 m을 활용하여 my_function을 maximization 하도록 objective function을 세워라 
+
+
+    B = fill(1, length(df[:, 1]))
+    if p > 1
+        
+        B[t] = 0
+        B[t2] = 0
+        B[t3] = 0
+        B[t4] = 0
+        B[t5] = 0
+        B[t6] = 0
+        B[t7] = 0
+        B[t8] = 0
+        B[t9] = 0
+        B[t10] = 0
+        B[t11] = 0
+        B[t12] = 0
+        B[t13] = 0
+        B[t14] = 0
+        B[t15] = 0
+        B[t16] = 0
+        B[t17] = 0
+        B[u1] = 0
+        B[u2] = 0
+        B[u3] = 0
+        B[u4] = 0
+        B[u5] = 0
+        B[u6] = 0
+        B[u7] = 0
+        B[u8] = 0
+        B[u9] = 0
+        B[u10] = 0
+    end
+
+    my_function = sum( B[i] * var[i] for i in index_x) 
+
+    # my_function = sum( 1 * var[i] for i in index_x) 
+    @objective(m, Max, my_function)
+
+    # Model 하에서 각 j번째 제약에 대해서 모든 변수들의 합이 l[j]와 u[j]사이에 있도록 제약식을 세운 후 model에 반영
+    # 예) j번째 제약: l[j] <= A[j, 1]*x1 + A[j, 1]*x2 + ... + A[j, 1]*x1726 <= u[j]
+    # constraints[j] 에 j번째 제약
+    @constraint(m, constraint[j in index_constraints_A],
+               l[j] <= sum( A[j,i] * var[i] for i in index_x ) <= u[j] 
+               )
+
+    @constraint(m, constraint_FAT_1, 
+                  0 <= sum( (-0.15*A[2,i]+9*A[5,i]) * var[i] for i in index_x ) <=Inf  ##Fat/calorie
+                  )
+    @constraint(m, constraint_FAT_2, 
+                  -Inf <= sum( (-0.3*A[2,i]+9*A[5,i]) * var[i] for i in index_x ) <=0  ##Fat/calorie
+                  )
+    @constraint(m, constraint_C_1,  
+                 0 <= sum( (-0.55*A[2,i]+4*A[4,i]) * var[i] for i in index_x ) <=Inf  ##Carbohydrate/calorie
+                 )
+    @constraint(m, constraint_C_2, 
+                 -Inf <= sum( (-0.65*A[2,i]+4*A[4,i]) * var[i] for i in index_x ) <=0 ##Carbohydrate/calorie
+                 )
+    @constraint(m, constraint_P_1, 
+                 0 <= sum( (-0.07*A[2,i]+4*A[3,i]) * var[i] for i in index_x ) <=Inf ##Protein/calorie
+                 )
+    @constraint(m, constraint_P_2, 
+                 -Inf <= sum( (-0.2*A[2,i]+4*A[3,i]) * var[i] for i in index_x ) <=0 ##Protein/calorie
+                 )
+#   @constraint(m, maindish, 
+#                 sum((A[23,i]+A[25,i])*var[i] for i in index_x)== 6  ## 4 for breakfast
+#                  )
+#    @constraint(m, same, 
+#                sum((A[23,i])*var[i] for i in index_x)==sum((A[25,i])*var[i] for i in index_x) ## Rice == Soup
+#                 )
+    @constraint(m, samevegisoup, 
+                 sum((A[29,i])*var[i] for i in index_x)<=sum((A[32,i])*var[i] for i in index_x) ## 채소국 <= 아침국조합1
+                 )
+    @constraint(m, samevegisoup2, 
+                 sum((A[30,i])*var[i] for i in index_x)<=sum((A[33,i])*var[i] for i in index_x) ## 채소국X <= 아침국조합2
+                )
+
+    @constraint(m, maindish, 
+                sum((A[23,i]+A[24,i]+A[25,i]+A[37,i])*var[i] for i in index_x)== 6 ##  Rice + Soup +Special == 4
+                 )
+    @constraint(m, same, 
+                sum((A[23,i]+A[24,i])*var[i] for i in index_x)==sum((A[25,i]+A[37,i])*var[i] for i in index_x) ## Rice == Soup
+                 )
+    @constraint(m, soupsamespecial, 
+                sum((A[27,i])*var[i] for i in index_x)<= sum((A[31,i])*var[i] for i in index_x) ## 국필요일품 == 일품가능한국
+                  )
+    @constraint(m, soupsamespecial2, 
+                  sum((A[28,i])*var[i] for i in index_x)==sum((A[37,i])*var[i] for i in index_x) ## 국필요일품X == empty
+                   )
+    
+    
+    ## 밥 종류 맞추기
+    rice_type = rand(38:61)
+    @constraint(m, rice_same, 
+                sum((A[23, i])*var[i] for i in index_x) == sum((A[rice_type, i])*var[i] for i in index_x)
+                )
+
+    #@constraint(m, breakfast, 
+    #             sum((A[18,i]+A[19,i]+A[20,i])*var[i] for i in index_x)== 3 ##  Rice + Soup == 6 ## 4 for breakfast
+    #            )
+
+    #@constraint(m, breakfast_same, 
+    #            sum((A[18,i])*var[i] for i in index_x)==sum((A[19,i])*var[i] for i in index_x) ##  Rice + Soup == 6 ## 4 for breakfast
+    #            )
+
+    #@constraint(m, breakfast_same2, 
+    #            sum((A[18,i])*var[i] for i in index_x)==sum((A[20,i])*var[i] for i in index_x) ##  Rice + Soup == 6 ## 4 for breakfast
+    #            )
+    # 위에서 세운 objective function과 constraints를 반영하여 model을 최적화한다.
+    optimize!(m)
+
+    sol = Dict()
+    for i in all_variables(m)
+#         println(i)
+        sol[i] = JuMP.value(i)
+    end  
+    gen_menu_list = []
+    gen_menu = [k for (k,v) in sol if v >= 0.9]
+    # [gen_menu_list; gen_menu]
+    append!(gen_menu_list, gen_menu)
+    append!(gen_menu_stack, gen_menu_list)
+
+    global t = parse(Int, chop(string(gen_menu_list[1]), head=2))
+    global t2 = parse(Int, chop(string(gen_menu_list[2]), head=2))
+    global t3 = parse(Int, chop(string(gen_menu_list[3]), head=2))
+    global t4 = parse(Int, chop(string(gen_menu_list[4]), head=2))
+    global t5 = parse(Int, chop(string(gen_menu_list[5]), head=2))
+    global t6 = parse(Int, chop(string(gen_menu_list[6]), head=2))
+    global t7 = parse(Int, chop(string(gen_menu_list[7]), head=2))
+    global t8 = parse(Int, chop(string(gen_menu_list[8]), head=2))
+    global t9 = parse(Int, chop(string(gen_menu_list[9]), head=2))
+    global t10 = parse(Int, chop(string(gen_menu_list[10]), head=2))
+    global t11 = parse(Int, chop(string(gen_menu_list[11]), head=2))
+    global t12 = parse(Int, chop(string(gen_menu_list[12]), head=2))
+    global t13 = parse(Int, chop(string(gen_menu_list[13]), head=2))
+    global t14 = parse(Int, chop(string(gen_menu_list[14]), head=2))
+    global t15 = parse(Int, chop(string(gen_menu_list[15]), head=2))
+    global t16 = parse(Int, chop(string(gen_menu_list[16]), head=2))
+    global t17 = parse(Int, chop(string(gen_menu_list[17]), head=2))
+    
+    global u1 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u2 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u3 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u4 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u5 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u6 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u7 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u8 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u9 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+    global u10 = parse(Int, chop(string(rand(gen_menu_stack)), head=2))
+
+
+end
+
+gen_menu_stack
+
+gen_menu_mat = reshape(gen_menu_stack, (17, num_sample))
+CSV.write("C:/Users/unist/Desktop/Service Lab/2023 고신대/식단 생성(업데이트, 0925)/어린이ABC_3-5세DB/gen_diet_35_아침일반식_밥2+일품국(4000).csv",  DataFrame(gen_menu_mat, :auto), header=false)
+# for i in 1:14
+#     println(i)
+# end
+# x = zeros(0)
+# append!( x, rand(10) )
+
+# v = rand(6)
+# reshape(v, 3, 2)
